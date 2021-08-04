@@ -1,14 +1,32 @@
 ---
-title: "Relatórios em R Markdown"
+title: "Relatórios em RMarkdown"
 output:
-  pdf_document: 
-    keep_tex: yes
-  word_document: default
   html_document: default
+  # prettydoc::html_pretty
+  # word_document: default
+  # pdf_document: 
+  #   keep_tex: yes
 ---
 
+# Referências de RMarkdown
 
-# O que é o R Markdown?
+
+# Exemplos
+
+- **Blogs**
+  + [RStudio AI Blog](https://blogs.rstudio.com/ai/)
+  + [Lista de Exercícios](https://athospd.github.io/SSC5890/)
+  
+- **Livros**
+  + [R for Data Science](https://r4ds.had.co.nz/)
+  + [Ciência de Dados em R](https://livro.curso-r.com/)
+  + [Tidy Modeling with R](https://www.tmwr.org/)
+  
+- **dashboard**
+  + [Exemplinho de ML](https://curso-r.github.io/202104-intro-ml/exemplos/11-report-credit-data.html)
+
+
+# O que é o RMarkdown?
 
 ```{r}
 aloalo <- 2 + 2
@@ -101,7 +119,7 @@ Você pode carregar pacotes e dados normalmente dentro de um script R Markdown.
 ```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(readxl)
-imdb <- read_excel("imdb.xlsx")
+imdb <- read_csv("https://raw.githubusercontent.com/curso-r/202005-r4ds-1/master/dados/imdb.csv")
 ```
 
 Veja que as mensagens e warnings dos nossos códigos também são colocadas no relatório. Para evitar isso, basta usarmos os parâmetros `message=FALSE` e `warning=FALSE`.
@@ -141,3 +159,7 @@ imdb %>%
 ```
 
 Para centralizar o gráfico no documento, você pode usar o parâmetro `fig.align = "center"` no chunk. Para alterar o tamanho da figura, existem os parâmetros `fig.width` (comprimento) e `fig.height` (altura). O parâmetro `fig.cap` coloca legendas.
+
+## Instalação de LateX
+
+

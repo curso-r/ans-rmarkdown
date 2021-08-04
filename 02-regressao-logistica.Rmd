@@ -19,6 +19,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, eval = TRUE
 ```{r}
 # pacotes ---------------
 library(tidyverse)
+library(GGally)
 ```
 
 # Conexão R e SQL
@@ -138,34 +139,27 @@ teste %>%
 
 # Fluxo de Trabalho do Tidymodels
 
-```{r}
-# Pacotes ------------------------------------------------------------------
-library(tidymodels)
-library(ISLR)
-library(tidyverse)
-library(modeldata)
-library(pROC)
-library(vip)
-library(padr)
-```
-
-
 ## PASSO 0) CARREGAR AS BASES
 
 ```{r}
-data("credit_data")
-help(credit_data)
-credit_data <- credit_data %>% na.omit()
+# https://github.com/gastonstat/CreditScoring 
+# http://bit.ly/2kkBFrk
+library(modeldata)
+data(credit_data)
 glimpse(credit_data) # German Risk
-credit_data %>% count(Status)
-```
 
+credit_data %>% count(Status)
+
+# trazer do servidor para o R (memória do computador local)
+credit_data <- credit_data %>% collect()
+```
 
 ## PASSO 1) BASE TREINO/TESTE
 
 ```{r}
 set.seed(1)
 credit_initial_split <- initial_split(credit_data, strata = "Status", prop = 0.75)
+
 credit_train <- training(credit_initial_split)
 credit_test  <- testing(credit_initial_split)
 ```
@@ -174,19 +168,46 @@ credit_test  <- testing(credit_initial_split)
 
 ```{r}
 skimr::skim(credit_train)
+```
+
+```{r}
 visdat::vis_miss(credit_train)
+```
+
+```{r}
 credit_train %>% 
   select(where(is.numeric)) %>% 
-  cor() %>% 
-  corrplot::corrplot() 
+  cor(use = "p") %>% 
+  corrplot::corrplot()
+```
+
+```{r, fig.height=12, message=FALSE, warning=FALSE}
 credit_train %>% 
+  select(where(is.numeric), Status) %>%
+  ggpairs(aes(colour = Status))
+```
+
+```{r, fig.height=8}
+contagens <- credit_train %>% 
   select(c(where(is.factor), Status)) %>%
   pivot_longer(-Status, names_to = "variavel", values_to = "valor") %>%
-  count(Status, variavel, valor) %>%
+  count(Status, variavel, valor)
+
+# tabela
+contagens %>%
+  pivot_wider(names_from = Status, values_from = n)
+```
+
+```{r, fig.height=8}
+contagens %>%
   ggplot(aes(y = valor, x = n, fill = Status)) +
   geom_col(position = "fill") +
+  geom_label(aes(label = n), position = position_fill(vjust = 0.5)) +
   facet_wrap(~variavel, scales = "free_y") +
   ggtitle("Status vs. Variáveis Categóricas")
+```
+
+```{r, fig.height=8}
 credit_train %>% 
   select(c(where(is.numeric), Status)) %>%
   pivot_longer(-Status, names_to = "variavel", values_to = "valor") %>%
@@ -194,6 +215,9 @@ credit_train %>%
   geom_boxplot() +
   facet_wrap(~variavel, scales = "free_x") +
   ggtitle("Status vs. Variáveis Numéricas")
+```
+
+```{r, fig.height=8}
 credit_train %>% 
   select(c(where(is.numeric), Status)) %>%
   pivot_longer(-Status, names_to = "variavel", values_to = "valor") %>%
@@ -204,18 +228,87 @@ credit_train %>%
   ggtitle("Status vs. Variáveis Numéricas NA ESCALA LOG")
 ```
 
+```{r, fig.height=8}
+credit_train %>% 
+  select(c(where(is.numeric), Status)) %>%
+  pivot_longer(-Status, names_to = "variavel", values_to = "valor") %>%
+  ggplot(aes(x = valor, colour = Status)) +
+  stat_ecdf() +
+  facet_wrap(~variavel, scales = "free_x") +
+  labs(title = "Status vs. Variáveis Numéricas",
+       subtitle = "Distribuição Acumulada")
+```
+
+```{r, fig.height=13}
+grafico_de_barras_das_vars_continuas <- function(dados, barras = 10) {
+  dados %>% 
+    select(c(where(is.numeric), Status)) %>%
+    pivot_longer(-Status, names_to = "variavel", values_to = "valor") %>%
+    dplyr::group_by(variavel) %>%
+    dplyr::mutate(
+      valor = factor(dplyr::ntile(valor, barras), levels = 1:barras)
+    ) %>%
+    dplyr::count(Status, variavel, valor) %>%
+    ggplot(aes(y = (valor), x = n, fill = Status)) +
+    geom_col(position = "fill") +
+    geom_label(aes(label = n), position = position_fill(vjust = 0.5)) +
+    facet_wrap(~variavel, scales = "free_y", ncol = 3) +
+    ggtitle("Status vs. Variáveis Categóricas")
+}
+
+grafico_de_barras_das_vars_continuas(credit_train, barras = 12)
+```
+
 ## PASSO 3) DATAPREP
 
 ```{r}
+# criando a receita
 credit_recipe <- recipe(Status ~ ., data = credit_train) %>%
+  step_zv(all_predictors()) %>%
+  step_mutate(
+    Home = ifelse(is.na(Home), "other", as.character(Home)),
+    Job = ifelse(is.na(Job), "partime", as.character(Job)),
+    Marital = ifelse(is.na(Marital), "married",as.character(Marital)),
+    Assets = ifelse(is.na(Assets), min(Assets, na.rm = TRUE), Assets),
+    Income = ifelse(is.na(Income), min(Income, na.rm = TRUE), Income),
+  ) %>%
+  step_impute_bag(Debt, impute_with = imp_vars(Income, Price, Amount)) %>%
   step_normalize(all_numeric()) %>%
-  step_impute_linear(Income, Assets, Debt, impute_with = imp_vars(Expenses)) %>%
-  step_impute_mode(Home) %>%
-  step_dummy(all_nominal(), -all_outcomes()) %>%
-  step_zv(all_predictors()) 
+  step_novel(all_nominal_predictors())
+
+credit_recipe
+```
+
+```{r, fig.height=15}
+# criando a base preparada
+credit_preparada <- bake(prep(credit_recipe), new_data = NULL)
+```
+
+```{r, fig.height=8}
 # olhando a base preparada
-bake(prep(credit_recipe), new_data = NULL)
-visdat::vis_miss(bake(prep(credit_recipe), new_data = NULL))
+visdat::vis_miss(credit_preparada)
+```
+
+```{r, fig.height=13}
+credit_preparada %>% 
+  select(c(where(is.factor), Status)) %>%
+  pivot_longer(-Status, names_to = "variavel", values_to = "valor") %>%
+  count(Status, variavel, valor) %>%
+  ggplot(aes(y = valor, x = n, fill = Status)) +
+  geom_col(position = "fill") +
+  geom_label(aes(label = n), position = position_fill(vjust = 0.5)) +
+  facet_wrap(~variavel, scales = "free_y", ncol = 3) +
+  ggtitle("Status vs. Variáveis Categóricas")
+```
+
+```{r, fig.height=10}
+grafico_de_barras_das_vars_continuas(credit_preparada)
+```
+
+```{r}
+# finalizando a receita com dummies
+credit_recipe <- credit_recipe %>%
+  step_dummy(all_nominal_predictors())
 ```
 
 ## PASSO 4) MODELO
@@ -230,6 +323,7 @@ visdat::vis_miss(bake(prep(credit_recipe), new_data = NULL))
 credit_lr_model <- logistic_reg(penalty = tune(), mixture = 1) %>%
   set_mode("classification") %>%
   set_engine("glmnet")
+
 # workflow
 credit_wf <- workflow() %>% add_model(credit_lr_model) %>% add_recipe(credit_recipe)
 ```
@@ -243,9 +337,11 @@ credit_wf <- workflow() %>% add_model(credit_lr_model) %>% add_recipe(credit_rec
 # d) escolha das métricas (rmse, roc_auc, etc)
 # d) collect_metrics() ou autoplot() para ver o resultado
 credit_resamples <- vfold_cv(credit_train, v = 5)
+
 credit_lr_tune_grid <- tune_grid(
   credit_wf,
   resamples = credit_resamples,
+  grid = 40,
   metrics = metric_set(
     accuracy, 
     roc_auc
@@ -256,15 +352,10 @@ credit_lr_tune_grid <- tune_grid(
     # mn_log_loss #binary cross entropy
   )
 )
+
 autoplot(credit_lr_tune_grid)
-# minha versão do autoplot()
+show_best(credit_lr_tune_grid)
 collect_metrics(credit_lr_tune_grid)
-collect_metrics(credit_lr_tune_grid) %>%
-  ggplot(aes(x = penalty, y = mean)) +
-  geom_point() +
-  geom_errorbar(aes(ymin = mean - std_err, ymax = mean + std_err)) +
-  facet_wrap(~.metric, scales = "free") +
-  scale_x_log10()
 ```
 
 ## PASSO 6) DESEMPENHO DO MODELO FINAL
@@ -274,59 +365,85 @@ collect_metrics(credit_lr_tune_grid) %>%
 # b) finaliza o modelo inicial com finalize_model()
 # c) ajusta o modelo final com todos os dados de treino (bases de validação já era)
 credit_lr_best_params <- select_best(credit_lr_tune_grid, "roc_auc")
-credit_lr_model <- credit_lr_model %>% finalize_model(credit_lr_best_params)
+credit_wf <- credit_wf %>% finalize_workflow(credit_lr_best_params)
+
 credit_lr_last_fit <- last_fit(
-  credit_lr_model,
-  Status ~ .,
+  credit_wf,
   credit_initial_split
 )
+
+credit_lr_last_fit
 ```
 
+```{r}
+# métricas de desempenho
+collect_metrics(credit_lr_last_fit)
+```
 
+```{r}
+# base de teste com as predições
+collect_predictions(credit_lr_last_fit)
+```
 
 ### Variáveis importantes
 
 ```{r}
-credit_lr_last_fit_model <- credit_lr_last_fit$.workflow[[1]]$fit$fit
+# extrai o modelo do objeto de ajuste
+credit_lr_last_fit_model <- pull_workflow_fit(credit_lr_last_fit$.workflow[[1]])
+
+# tabela de betas
+vi(credit_lr_last_fit_model)
+```
+
+```{r}
+# gráfico de Variable Importances
 vip(credit_lr_last_fit_model)
+```
+
+```{r}
+# outra maneira de pegar os betas: broom::tidy()
+betas <- broom::tidy(credit_lr_last_fit_model)
+betas %>% arrange(desc(abs(estimate)))
 ```
 
 ### Métricas de desempenho
 
 ```{r}
 collect_metrics(credit_lr_last_fit)
+
 credit_test_preds <- collect_predictions(credit_lr_last_fit)
+
 # roc
 credit_roc_curve <- credit_test_preds %>% roc_curve(Status, .pred_bad)
 autoplot(credit_roc_curve)
+```
+
+```{r}
 # confusion matrix
 credit_test_preds %>%
   mutate(
     Status_class = factor(if_else(.pred_bad > 0.6, "bad", "good"))
   ) %>%
   conf_mat(Status, Status_class)
-options(scipen = 999)
-credit_lr_last_fit$.workflow[[1]] %>%
-  pull_workflow_fit() %>% 
-  tidy() %>%
-  select()
 ```
 
 ### Gráficos extras
 
-```{r}
-# risco por faixa de score
+```{r, fig.width=5, fig.height=6}
+# risco por faixa de score (multiplas notas de corte)]
+percentis = 15
 credit_test_preds %>%
   mutate(
-    score =  factor(ntile(.pred_bad, 10))
+    score =  factor(ntile(.pred_bad, percentis))
   ) %>%
   count(score, Status) %>%
-  ggplot(aes(x = score, y = n, fill = Status)) +
+  ggplot(aes(y = score, x = n, fill = Status)) +
   geom_col(position = "fill") +
-  geom_label(aes(label = n), position = "fill") +
-  coord_flip()
+  geom_label(aes(label = n), position = "fill")
+```
+
+```{r, fig.width=9, fig.height=6}
 # gráfico sobre os da classe "bad"
-percentis = 20
 credit_test_preds %>%
   mutate(
     score = factor(ntile(.pred_bad, percentis))
@@ -340,18 +457,52 @@ credit_test_preds %>%
   mutate(p = n/sum(n)) %>%
   ggplot(aes(x = p, y = score)) +
   geom_col() +
-  geom_label(aes(label = scales::percent(p))) +
+  geom_label(aes(label = scales::percent(p)), hjust = 1.1) +
   geom_vline(xintercept = 1/percentis, colour = "red", linetype = "dashed", size = 1)
 ```
 
 ## PASSO 7) MODELO FINAL
 
+### Ajuste final
+
 ```{r}
-credit_final_lr_model <- credit_lr_model %>% fit(Status ~ ., credit_data)
+credit_final_lr_model <- fit(credit_wf, credit_data)
+```
+
+### Variáveis do modelo final
+
+```{r}
+# extrai o modelo do objeto de ajuste
+credit_final_lr_fit <- credit_final_lr_model$fit$fit
+
+# tabela de betas
+vi(credit_final_lr_fit)
+vip(credit_final_lr_fit)
+
 # salva tudo no computador
-write_rds(credit_lr_model, "credit_lr_model.rds")
 write_rds(credit_final_lr_model, "credit_final_lr_model.rds")
 write_rds(credit_lr_last_fit, "credit_lr_last_fit.rds")
+```
+
+### predições
+
+```{r}
+# predições
+dados_novos <- testing(credit_initial_split)
+predict(credit_final_lr_model, new_data = dados_novos, type = "prob")
+
+# colocar no BD
+dados_novos <- bind_cols(
+  dados_novos,
+  predict(credit_final_lr_model, new_data = dados_novos, type = "prob")
+)
+
+# salvar no excel
+writexl::write_xlsx(dados_novos, "dados_novos.xlsx")
+
+# salvar no SQL
+copy_to(con, dados_novos, overwrite = TRUE, temporary = FALSE)
+dbListTables(con)
 ```
 
 # [EXEMPLO DE DASHBOARD (link)](https://curso-r.github.io/202104-intro-ml/exemplos/11-report-credit-data.html)
