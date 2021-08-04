@@ -1,0 +1,75 @@
+---
+title: "SQL PYTHON R"
+author: "Athos Petri Damiani - NUSP 6796736"
+date: "29/7/2021"
+output: html_document
+---
+
+[EXEMPLO](https://athospd.github.io/SSC5890/)
+
+Setup 
+
+```{r}
+library(reticulate)
+use_condaenv("r-reticulate")
+# conda_install("r-reticulate", "numpy")
+```
+
+
+Olá Mundo
+
+### R
+
+```{r}
+aff = "O athos escreveu isso no R"
+
+py$aff = aff
+py$numeros = 1:10
+```
+
+### Python
+
+```{python}
+import numpy as np
+x = 'hello, python world! ' + r.aff
+print(x)
+```
+
+```{r}
+py$
+```
+
+
+### SQL
+
+```{r, message=FALSE, warning=FALSE}
+library(DBI)
+library(dplyr)
+library(dbplyr)
+con <- DBI::dbConnect(
+  RMariaDB::MariaDB(), 
+  host = "relational.fit.cvut.cz", 
+  port = 3306, 
+  username = "guest", 
+  password = "relational",
+  dbname = "financial"
+)
+DBI::dbListTables(con)
+```
+
+```{sql, connection=con}
+SELECT account_id, date, frequency 
+FROM account 
+limit 100
+```
+
+```{r}
+tbl(con, "account")
+```
+
+
+## Bash
+
+```{bash}
+echo "Hello Bash!"
+```
