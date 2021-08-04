@@ -3,6 +3,6 @@
 .Rdata
 .httr-oauth
 .DS_Store
-*.rds
+*rds
 credit_lr_last_fit.rds
 credit_final_lr_model.rds
