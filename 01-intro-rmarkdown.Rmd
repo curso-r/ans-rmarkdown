@@ -1,30 +1,36 @@
 ---
 title: "Relatórios em RMarkdown"
 output:
-  html_document: default
+  # html_document: default
   # prettydoc::html_pretty
   # word_document: default
-  # pdf_document: 
-  #   keep_tex: yes
+  pdf_document:
+    keep_tex: yes
 ---
 
 # Referências de RMarkdown
 
+- [R Markdown Guide](https://bookdown.org/yihui/rmarkdown/)
+- [R Markdown references](https://www.rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf)
+- [R Markdown](http://rmarkdown.rstudio.com)](http://rmarkdown.rstudio.com)
+- [R Markdown Cheatsheet](https://github.com/rstudio/cheatsheets/raw/master/rmarkdown-2.0.pdf)
 
 # Exemplos
 
-- **Blogs**
-  + [RStudio AI Blog](https://blogs.rstudio.com/ai/)
-  + [Lista de Exercícios](https://athospd.github.io/SSC5890/)
-  
-- **Livros**
-  + [R for Data Science](https://r4ds.had.co.nz/)
-  + [Ciência de Dados em R](https://livro.curso-r.com/)
-  + [Tidy Modeling with R](https://www.tmwr.org/)
-  
-- **dashboard**
-  + [Exemplinho de ML](https://curso-r.github.io/202104-intro-ml/exemplos/11-report-credit-data.html)
+- **Relatórios**
+  - [OBSERVATÓRIO DA INSOLVÊNCIA](https://abjur.github.io/obsFase2/relatorio/obs_recuperacoes_abj.pdf)
 
+- **Blogs**
+  - [RStudio AI Blog](https://blogs.rstudio.com/ai/)
+  - [Lista de Exercícios](https://athospd.github.io/SSC5890/)
+
+- **Livros**
+  - [R for Data Science](https://r4ds.had.co.nz/)
+  - [Ciência de Dados em R](https://livro.curso-r.com/)
+  - [Tidy Modeling with R](https://www.tmwr.org/)
+
+- **dashboard**
+  - [Exemplinho de ML](https://curso-r.github.io/202104-intro-ml/exemplos/11-report-credit-data.html)
 
 # O que é o RMarkdown?
 
@@ -32,45 +38,39 @@ output:
 aloalo <- 2 + 2
 ```
 
-O R Markdown é `r aloalo` uma ferramenta para criação de relatórios automatizados utilizando as linguagem R e Markdown. 
+O R Markdown é `r aloalo` uma ferramenta para criação de relatórios automatizados utilizando as linguagem R e Markdown.
 
 A linguagem de marcação Markdown serve para construirmos e formatarmos diversos formatos de arquivos (PDF, HTML, Word, entre outros) a partir de um arquivo de texto com regras bem simples. O R Markdown é uma extensãi di Markdown que nos permite colocar código de R.
 
-Linguagens de marcação utilizam marcadores (símbolos, tags, funções) para formatar um arquivo de texto simples. Os exemplos mais famosos de linguagem de marcação são o HTML e LaTeX.
-I N S
-Após a construção do **documento**, para gerarmos o relatório na extensão desejada, precisamos *renderizá-lo*, isto é, transformar o arquivo R Markdown em um PDF, HTML ou Word. Isso pode ser feito no RStudio a partir do botão `knit`, que fica logo acima do script, ou pelo atalho `CTRL + SHIFT + K`.
+Linguagens de marcação utilizam marcadores (símbolos, tags, funções) para formatar um arquivo de texto simples. Os exemplos mais famosos de linguagem de marcação são o HTML e LaTeX. I N S Após a construção do **documento**, para gerarmos o relatório na extensão desejada, precisamos *renderizá-lo*, isto é, transformar o arquivo R Markdown em um PDF, HTML ou Word. Isso pode ser feito no RStudio a partir do botão `knit`, que fica logo acima do script, ou pelo atalho `CTRL + SHIFT + K`.
 
 ## Regras simples de formatação
 
 Usando o R Markdown, podemos criar arquivos HTML, PDF e Word sem precisar sair do R. A grande vantagem é poder de automatização. Construindo um relatório em R Markdown, com exceção das interpretações e conclusões, só precisamos montá-lo uma vez. A partir daí, com apenas um clique podemos:
 
-- replicar o relatório para diversas versões da base de dados (modificações, correções, processos periódicos);
+-   replicar o relatório para diversas versões da base de dados (modificações, correções, processos periódicos);
 
-- replicar o relatório para diversas variáveis.
+-   replicar o relatório para diversas variáveis.
 
 ## Marcadores
 
 A seguir, apresentamos uma lista dos principais marcadores utilizados para formatar texto:
 
-- uma palavra entre asteriscos fica em itálico: `*texto*` é transformado em *texto*
+-   uma palavra entre asteriscos fica em itálico: `*texto*` é transformado em *texto*
 
-- uma palavra entre dois asteríscos fica em negrito: `**texto**` é transformado em **texto**
+-   uma palavra entre dois asteríscos fica em negrito: `**texto**` é transformado em **texto**
 
-- um ou mais hashtags viram títulos: `# Título muito grande`, `## Título grande`, `### Título médio`, `#### Título pequeno`, `##### Título muito pequeno`
+-   um ou mais hashtags viram títulos: `# Título muito grande`, `## Título grande`, `### Título médio`, `#### Título pequeno`, `##### Título muito pequeno`
 
-- hiperlinks podem ser criados com a estrutura `[texto](link)`: 
-
+-   hiperlinks podem ser criados com a estrutura `[texto](link)`:
 
 `[link para o site da Curso-R](https://curso-r.com)` é transformado em [link para o site da Curso-R](https://curso-r.com).
 
-
-- para deixar o texto com `esse formato` (formato de código), apenas coloque o texto entre duas crases.
-
+-   para deixar o texto com `esse formato` (formato de código), apenas coloque o texto entre duas crases.
 
 ## Chunks: escrevendo nosso código de R
 
 Em um arquivo R Markdown, precisamos escrever nossos códigos dentro dos *chunks*. Para insirir um chunk, utilize o atalho `CTRL + ALT + I`.
-
 
 Dentro dos chunks você poderá escrever códigos em R como se fosse o nosso script .R tradicional. Por padrão, o código dentro do chunk será colocado no relatório, assim como o resultado da execução desse código (i.e., tudo que seria). Veja o exemplo abaixo:
 
@@ -91,7 +91,7 @@ meu_vetor * 10
 
 Para alterar esses comportamentos padrões, utilizamos os parâmetros do chunk. Os parêmetros são colocados dentro das chaves, na linha que define o começo do chunk. Esse `r` que aparece em todos os chunks representa que o código dentro dele é um código de R.
 
-Para impedir que o código de um chunk apareça no relatório, basta usar o parâmetro `echo = FALSE`. As chaves neste caso ficaria `{r, echo = FALSE}`. Quando fazemos isso, apenas o resultado é mostrado no relatório. 
+Para impedir que o código de um chunk apareça no relatório, basta usar o parâmetro `echo = FALSE`. As chaves neste caso ficaria `{r, echo = FALSE}`. Quando fazemos isso, apenas o resultado é mostrado no relatório.
 
 ```{r, echo = FALSE}
 meu_vetor + 1
@@ -149,7 +149,7 @@ imdb %>%
 
 Para construir gráficos, não há segredos. O mesmo gráfico que apareceria na aba **Plots** do RStudio aparecerá no relatório.
 
-```{r, fig.align = "center", warning = FALSE, fig.cap="Figura 1. Nota média ao longo dos anos.", echo = FALSE}
+```{r grafico, echo = FALSE, fig.align="center", fig.cap="Figura 1. Nota média ao longo dos anos.", warning=FALSE}
 imdb %>% 
   group_by(ano) %>% 
   summarise(nota_media = mean(nota_imdb, na.rm = TRUE)) %>% 
@@ -162,4 +162,9 @@ Para centralizar o gráfico no documento, você pode usar o parâmetro `fig.alig
 
 ## Instalação de LateX
 
+Rode o código abaixo e reinicie o RStudio.
 
+```{r, eval = FALSE}
+# install.packages("tinytex")
+tinytex::install_tinytex()
+```
