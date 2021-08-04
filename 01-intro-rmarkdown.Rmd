@@ -147,7 +147,7 @@ imdb %>%
 
 ## Incluindo gráficos
 
-Para construir gráficos, não há segredos. O mesmo gráfico que apareceria na aba **Plots** do RStudio aparecerá no relatório.
+O mesmo gráfico que apareceria na aba **Plots** do RStudio aparecerá no relatório.
 
 ```{r grafico, echo = FALSE, fig.align="center", fig.cap="Figura 1. Nota média ao longo dos anos.", warning=FALSE}
 imdb %>% 
@@ -159,6 +159,13 @@ imdb %>%
 ```
 
 Para centralizar o gráfico no documento, você pode usar o parâmetro `fig.align = "center"` no chunk. Para alterar o tamanho da figura, existem os parâmetros `fig.width` (comprimento) e `fig.height` (altura). O parâmetro `fig.cap` coloca legendas.
+
+## Incluindo Imagens
+
+```{r}
+knitr::include_graphics("slides/img/trio-sticker.png")
+```
+
 
 ## Instalação de LateX
 
